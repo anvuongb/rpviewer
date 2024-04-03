@@ -52,6 +52,19 @@ int main(void)
         int i = 0;
         std::cout << "current dir = " << path << "\n";
         std::cout << "textSize x = " << textSize.x << "\n";
+
+        // increase fontSize
+        if (IsKeyPressed(KEY_EQUAL) || IsKeyDown(KEY_EQUAL)) {
+            ++fontSize;
+            std::cout << "Font size increased\n";
+        }
+
+        // decrease fontSize
+        if (IsKeyPressed(KEY_MINUS) || IsKeyDown(KEY_MINUS)) {
+            --fontSize;
+            std::cout << "Font size increased\n";
+        }
+
         // onclick change directory
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
         {
