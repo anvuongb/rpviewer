@@ -22,13 +22,22 @@ int main(void) {
   InitWindow(screenWidth, screenHeight, "Research Paper Viewer");
 
   // File explorer explorerConfig
-  FileExplorerConfig explorerConfig = {.font = LoadFont("fonts/CascadiaMono.ttf"),
-                               .spacing = 1,
-                               .fontSize = 20,
-                               .scrollSpeed = 1,
-                               .folderColor = DARKBLUE,
-                               .fileColor = DARKPURPLE};
+  FileExplorerConfig explorerConfig = {
+      .font = LoadFont("fonts/CascadiaMono.ttf"),
+      .spacing = 1,
+      .fontSize = 20,
+      .scrollSpeed = 1,
+      .folderColor = DARKBLUE,
+      .fileColor = DARKPURPLE};
   // End File explorer explorerConfig
+
+  ImageConfig imageConfig = {
+      .targetWidth = 200,
+  };
+  imageConfig.posImg.x = 400;
+  imageConfig.posImg.y = 5;
+  imageConfig.screenHeight = screenHeight;
+  imageConfig.screenWidth = screenWidth;
 
   Vector2 posText = {.x = 5, .y = 0};
   Vector2 posMouse = {0};
@@ -44,8 +53,8 @@ int main(void) {
     handle_font_size(explorerConfig);
 
     // Handle click
-    handle_click(explorerConfig, path, posText, posMouse, filesCount, mouseFileIdx,
-                 scrollOffset);
+    handle_click(explorerConfig, imageConfig, path, posText, posMouse, filesCount,
+                 mouseFileIdx, scrollOffset);
 
     // Handle scroll
     handle_scroll(explorerConfig, scrollOffset, filesCount, mouseFileIdx);
@@ -60,6 +69,7 @@ int main(void) {
     draw_file_explorer(explorerConfig, path, posText, posMouse, mouseFileIdx,
                        scrollOffset);
 
+    draw_load_image(imageConfig);
     EndDrawing();
     //----------------------------------------------------------------------------------
   }

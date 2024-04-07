@@ -30,6 +30,15 @@ typedef struct {
   string error;
 } Path;
 
+typedef struct {
+  string imgPath;
+  Texture texture;
+  int targetWidth;
+  Vector2 posImg;
+  int screenWidth;
+  int screenHeight;
+} ImageConfig;
+
 fs::directory_iterator get_directory(Path& p) {
   fs::directory_iterator dir_iter;
   try {
@@ -63,15 +72,27 @@ void handle_font_size(FileExplorerConfig& config) {
   }
 }
 
+void handle_load_image(ImageConfig& conf) {
+  Image image = LoadImage(conf.imgPath.c_str());
+  int targetWidth = conf.screenWidth - conf.posImg.x - 5;
+  ImageResize(&image, targetWidth,
+              image.height / float(image.width) * targetWidth);
+
+  conf.texture = LoadTextureFromImage(image);  // pass to GPU
+  conf.posImg.y = (conf.screenHeight / 2 - conf.texture.height / 2 - 40);
+  UnloadImage(image);  // remove from RAM
+}
+
 void handle_scroll(const FileExplorerConfig& config, int& scrollOffset,
                    int& filesCount, int& mouseFileIdx) {
   scrollOffset -= (GetMouseWheelMove() * config.scrollSpeed);
   if (scrollOffset < 0) scrollOffset = 0;
   if (scrollOffset > filesCount) scrollOffset = filesCount;
 }
-void handle_click(const FileExplorerConfig& config, Path& path,
-                  Vector2& posText, Vector2& posMouse, int& filesCount,
-                  int& mouseFileIdx, int& scrollOffset) {
+
+void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
+                  Path& path, Vector2& posText, Vector2& posMouse,
+                  int& filesCount, int& mouseFileIdx, int& scrollOffset) {
   posText.y = config.fontSize * 2;  // leave 2 units space for system
   posMouse = GetMousePosition();
 
@@ -87,8 +108,8 @@ void handle_click(const FileExplorerConfig& config, Path& path,
       for (int j = 0; j < mouseFileIdx - 1; j++) {
         fi++;
       }
-      if (check_directory_access(fi->path().string()) == NULL &&
-          fi->is_directory()) {
+      std::string fn = fi->path().string();
+      if (check_directory_access(fn) == NULL && fi->is_directory()) {
         // check if actually click within the filename
         std::string tmpPath = fi->path().filename().string();
         if (tmpPath.length() >= 20) {
@@ -105,6 +126,13 @@ void handle_click(const FileExplorerConfig& config, Path& path,
           mouseFileIdx =
               (posMouse.y + scrollOffset * config.fontSize) / config.fontSize;
         }
+      } else {
+        std::string fn_ext = fn.substr(fn.find_last_of(".") + 1);
+        if (fn_ext == "jpg" || fn_ext == "jpeg" || fn_ext == "png" ||
+            fn_ext == "bmp") {
+          imgConfig.imgPath = fn;
+          handle_load_image(imgConfig);
+        }
       }
     }
 
@@ -120,6 +148,11 @@ void handle_click(const FileExplorerConfig& config, Path& path,
     std::cout << "current_path = " << path.current_path_s << "\n";
     std::cout << "current_parent = " << path.parent_path_s << "\n";
   }
+}
+
+void draw_load_image(const ImageConfig& conf) {
+  if (conf.texture.id > 0)
+    DrawTexture(conf.texture, conf.posImg.x, conf.posImg.y, WHITE);
 }
 
 void draw_file_explorer(const FileExplorerConfig& config, Path& path,
