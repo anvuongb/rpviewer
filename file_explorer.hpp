@@ -37,6 +37,7 @@ typedef struct {
   Vector2 posImg;
   int screenWidth;
   int screenHeight;
+  int captionSize;
 } ImageConfig;
 
 fs::directory_iterator get_directory(Path& p) {
@@ -110,6 +111,11 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
       }
       std::string fn = fi->path().string();
       if (check_directory_access(fn) == NULL && fi->is_directory()) {
+        // unload texture if currently loaded
+        if (!imgConfig.imgPath.empty()) {
+          imgConfig.imgPath = "";
+          UnloadTexture(imgConfig.texture);
+        }
         // check if actually click within the filename
         std::string tmpPath = fi->path().filename().string();
         if (tmpPath.length() >= 20) {
@@ -137,6 +143,11 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
     }
 
     if (mouseFileIdx == 0) {
+      // unload texture if currently loaded
+      if (!imgConfig.imgPath.empty()) {
+        imgConfig.imgPath = "";
+        UnloadTexture(imgConfig.texture);
+      }
       path.current_path_s =
           path.current_path.parent_path().parent_path().string();
       path.parent_path_s =
@@ -150,9 +161,16 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
   }
 }
 
-void draw_load_image(const ImageConfig& conf) {
-  if (conf.texture.id > 0)
+void draw_loaded_image(const ImageConfig& conf,
+                       const FileExplorerConfig fileConf) {
+  if (conf.texture.id > 0 && !conf.imgPath.empty()) {
     DrawTexture(conf.texture, conf.posImg.x, conf.posImg.y, WHITE);
+
+    Vector2 pos = conf.posImg;
+    pos.y += conf.texture.height;
+    DrawTextEx(fileConf.font, conf.imgPath.c_str(), pos, conf.captionSize,
+               fileConf.spacing, GRAY);
+  }
 }
 
 void draw_file_explorer(const FileExplorerConfig& config, Path& path,

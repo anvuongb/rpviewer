@@ -38,6 +38,7 @@ int main(void) {
   imageConfig.posImg.y = 5;
   imageConfig.screenHeight = screenHeight;
   imageConfig.screenWidth = screenWidth;
+  imageConfig.captionSize = 10;
 
   Vector2 posText = {.x = 5, .y = 0};
   Vector2 posMouse = {0};
@@ -69,7 +70,7 @@ int main(void) {
     draw_file_explorer(explorerConfig, path, posText, posMouse, mouseFileIdx,
                        scrollOffset);
 
-    draw_load_image(imageConfig);
+    draw_loaded_image(imageConfig, explorerConfig);
     EndDrawing();
     //----------------------------------------------------------------------------------
   }
