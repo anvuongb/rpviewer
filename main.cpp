@@ -1,170 +1,73 @@
-#include "raylib.h"
-#include <string>
-#include <iostream>
+#include <file_explorer.hpp>
 #include <filesystem>
+#include <iostream>
 #include <iterator>
+#include <string>
+
+#include "raylib.h"
 namespace fs = std::filesystem;
 
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
-int main(void)
-{
+int main(void) {
+  Path path = {.current_path_s = "/home/anvuong/Desktop",
+               .parent_path_s = "/home/anvuong"};
 
-    std::string path = "/home/anvuong/Desktop";
+  // Initialization
+  //--------------------------------------------------------------------------------------
+  const int screenWidth = 800;
+  const int screenHeight = 800;
 
-    // Initialization
-    //--------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 800;
+  InitWindow(screenWidth, screenHeight, "Research Paper Viewer");
 
-    InitWindow(screenWidth, screenHeight, "Research Paper Viewer");
-    Font font = LoadFont("fonts/CascadiaMono.ttf");
-    float spacing = 1;
-    float fontSize = 20;
-    int scrollSpeed = 1;
-    int scrollOffset = 0;
-    Color folderColor = DARKBLUE;
-    Color fileColor = DARKPURPLE;
-    SetTargetFPS(60); // Set our game to run at 60 frames-per-second
-    //--------------------------------------------------------------------------------------
+  // File explorer explorerConfig
+  FileExplorerConfig explorerConfig = {.font = LoadFont("fonts/CascadiaMono.ttf"),
+                               .spacing = 1,
+                               .fontSize = 20,
+                               .scrollSpeed = 1,
+                               .folderColor = DARKBLUE,
+                               .fileColor = DARKPURPLE};
+  // End File explorer explorerConfig
 
-    // Main game loop
-    Vector2 pos = {.x = 5, .y = 0};
-    Vector2 mousePos = {0};
-    Vector2 textSize = {0};
-    std::string currentFile;
-    std::string currentSelectingFile;
-    fs::path currentPath;
-    while (!WindowShouldClose()) // Detect window close button or ESC key
-    {
-        // Update
-        //----------------------------------------------------------------------------------
-        // TODO: Update your variables here
-        pos.y = fontSize * 2; // leave 2 units space for system
-        mousePos = GetMousePosition();
-        // TODO: handle permission error when open directory
-        auto fi = fs::directory_iterator(path);
-        int filesCount = std::distance(fi, fs::directory_iterator{});
-        int mouseFileIdx = (mousePos.y - pos.y + scrollOffset * fontSize) / fontSize;
-        std::cout << "file count = " << filesCount << "\n";
-        std::cout << "mouse pos x = " << mousePos.x << " mouse index = " << mouseFileIdx << "\n";
-        int i = 0;
-        std::cout << "current dir = " << path << "\n";
-        std::cout << "textSize x = " << textSize.x << "\n";
+  Vector2 posText = {.x = 5, .y = 0};
+  Vector2 posMouse = {0};
+  int scrollOffset = 0;
+  int filesCount = 0;
+  int mouseFileIdx = 0;
 
-        // increase fontSize
-        if (IsKeyPressed(KEY_EQUAL) || IsKeyDown(KEY_EQUAL)) {
-            ++fontSize;
-            std::cout << "Font size increased\n";
-        }
+  SetTargetFPS(60);
 
-        // decrease fontSize
-        if (IsKeyPressed(KEY_MINUS) || IsKeyDown(KEY_MINUS)) {
-            --fontSize;
-            std::cout << "Font size increased\n";
-        }
+  while (!WindowShouldClose())  // Detect window close button or ESC key
+  {
+    // Handle fontsize
+    handle_font_size(explorerConfig);
 
-        // onclick change directory
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-        {
+    // Handle click
+    handle_click(explorerConfig, path, posText, posMouse, filesCount, mouseFileIdx,
+                 scrollOffset);
 
-            if (mouseFileIdx > 0 && mouseFileIdx <= filesCount)
-            {
-                fi = fs::directory_iterator(path);
-                for (int j = 0; j < mouseFileIdx - 1; j++)
-                {
-                    fi++;
-                }
-                if (fi->is_directory())
-                {
-                    // check if actually click within the filename
-                    std::string tmpPath = fi->path().filename().string();
-                    if (tmpPath.length() >= 20)
-                    {
-                        tmpPath = tmpPath.substr(0, 17) + "...";
-                    }
-                    Vector2 tmpTextSize = MeasureTextEx(font, currentSelectingFile.c_str(), fontSize, spacing);
-                    // clicked on filename
-                    if (mousePos.x < tmpTextSize.x)
-                    {
-                        path = fi->path().string();
-                        scrollOffset = 0;
-                        mouseFileIdx = (mousePos.y + scrollOffset * fontSize) / fontSize;
-                    }
-                }
-            }
+    // Handle scroll
+    handle_scroll(explorerConfig, scrollOffset, filesCount, mouseFileIdx);
 
-            else
-            {
-                path = currentPath.parent_path().parent_path();
-                scrollOffset = 0;
-                mouseFileIdx = (mousePos.y + scrollOffset * fontSize) / fontSize;
-            }
-        }
+    //----------------------------------------------------------------------------------
 
-        // onMouseScroll sift through the list
-        scrollOffset -= (GetMouseWheelMove() * scrollSpeed);
-        std::cout << "scrollOffset = " << scrollOffset << "\n";
-        if (scrollOffset < 0)
-            scrollOffset = 0;
-        if (scrollOffset > filesCount)
-            scrollOffset = filesCount;
+    // Draw
+    //----------------------------------------------------------------------------------
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
 
-        fi = fs::directory_iterator(path);
-        //----------------------------------------------------------------------------------
+    draw_file_explorer(explorerConfig, path, posText, posMouse, mouseFileIdx,
+                       scrollOffset);
 
-        // Draw
-        //----------------------------------------------------------------------------------
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
+    EndDrawing();
+    //----------------------------------------------------------------------------------
+  }
 
-        // Draw current path
-        Vector2 posc = {.x = 10, .y = 0};
-        DrawTextEx(font, path.c_str(), posc, fontSize, spacing, GRAY);
+  // De-Initialization
+  //--------------------------------------------------------------------------------------
+  CloseWindow();  // Close window and OpenGL context
+  //--------------------------------------------------------------------------------------
 
-        // Draw going back path
-        DrawTextEx(font, "..", pos, fontSize, spacing, BLACK);
-        if (mouseFileIdx == i)
-        {
-            DrawTextEx(font, "..", pos, fontSize, spacing, RED);
-        }
-        pos.y += fontSize;
-        i++;
-        for (const auto &entry : fi)
-        {
-            if (i > scrollOffset)
-            {
-                currentFile = entry.path().filename().string();
-                if (currentFile.length() > 20)
-                {
-                    currentFile = currentFile.substr(0, 17) + "...";
-                }
-                currentPath = entry.path();
-                if (entry.is_directory())
-                    DrawTextEx(font, currentFile.c_str(), pos, fontSize, spacing, folderColor);
-                else
-                    DrawTextEx(font, currentFile.c_str(), pos, fontSize, spacing, fileColor);
-                textSize = MeasureTextEx(font, currentFile.c_str(), fontSize, spacing);
-                if (mouseFileIdx == i && mousePos.x <= textSize.x)
-                {
-                    currentSelectingFile = currentFile;
-                    DrawTextEx(font, currentFile.c_str(), pos, fontSize, spacing, RED);
-                }
-
-                pos.y += fontSize;
-            }
-            i++;
-        }
-
-        EndDrawing();
-        //----------------------------------------------------------------------------------
-    }
-
-    // De-Initialization
-    //--------------------------------------------------------------------------------------
-    CloseWindow(); // Close window and OpenGL context
-    //--------------------------------------------------------------------------------------
-
-    return 0;
+  return 0;
 }
