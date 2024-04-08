@@ -159,7 +159,7 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
       }
     }
 
-    if (mouseFileIdx == 0) {
+    if (mouseFileIdx == 0 && posMouse.x < imgConfig.imageRegionStart.x) {
       // // unload texture if currently loaded
       // if (!imgConfig.imgPath.empty()) {
       //   imgConfig.imgPath = "";
