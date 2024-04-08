@@ -38,6 +38,7 @@ typedef struct {
   int screenWidth;
   int screenHeight;
   int captionSize;
+  Vector2 imageRegionStart;
 } ImageConfig;
 
 fs::directory_iterator get_directory(Path& p);
@@ -46,7 +47,7 @@ const char* check_directory_access(string p);
 
 void init_explorer(FileExplorerConfig& config, Path& path);
 
-void handle_font_size(FileExplorerConfig& config);
+void handle_font_size(FileExplorerConfig& config, ImageConfig& imgConf);
 
 void handle_load_image(ImageConfig& conf);
 
@@ -62,7 +63,7 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
 void draw_loaded_image(const ImageConfig& conf,
                        const FileExplorerConfig fileConf);
 
-void draw_file_explorer(const FileExplorerConfig& config, Path& path,
+void draw_file_explorer(const FileExplorerConfig& config, ImageConfig& imgConf, Path& path,
                         Vector2& posText, Vector2& posMouse,
                         const int& mouseFileIdx, const int& scrollOffset);
 

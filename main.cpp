@@ -16,10 +16,10 @@ int main(void) {
 
   // Initialization
   //--------------------------------------------------------------------------------------
-  const int screenWidth = 800;
-  const int screenHeight = 800;
+  const int screenWidth = 1000;
+  const int screenHeight = 1000;
 
-  InitWindow(screenWidth, screenHeight, "Research Paper Viewer");
+  InitWindow(screenWidth, screenHeight, "Simple File Explorer");
 
   // File explorer explorerConfig
   FileExplorerConfig explorerConfig = {
@@ -32,11 +32,7 @@ int main(void) {
   // End File explorer explorerConfig
   init_explorer(explorerConfig, path);
 
-  ImageConfig imageConfig = {
-      .targetWidth = 200,
-  };
-  imageConfig.posImg.x = 400;
-  imageConfig.posImg.y = 5;
+  ImageConfig imageConfig;
   imageConfig.screenHeight = screenHeight;
   imageConfig.screenWidth = screenWidth;
   imageConfig.captionSize = 10;
@@ -52,11 +48,11 @@ int main(void) {
   while (!WindowShouldClose())  // Detect window close button or ESC key
   {
     // Handle fontsize
-    handle_font_size(explorerConfig);
+    handle_font_size(explorerConfig, imageConfig);
 
     // Handle click
-    handle_click(explorerConfig, imageConfig, path, posText, posMouse, filesCount,
-                 mouseFileIdx, scrollOffset);
+    handle_click(explorerConfig, imageConfig, path, posText, posMouse,
+                 filesCount, mouseFileIdx, scrollOffset);
 
     // Handle scroll
     handle_scroll(explorerConfig, scrollOffset, filesCount, mouseFileIdx);
@@ -68,10 +64,10 @@ int main(void) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
-    draw_file_explorer(explorerConfig, path, posText, posMouse, mouseFileIdx,
-                       scrollOffset);
-
     draw_loaded_image(imageConfig, explorerConfig);
+
+    draw_file_explorer(explorerConfig, imageConfig, path, posText, posMouse,
+                       mouseFileIdx, scrollOffset);
     EndDrawing();
     //----------------------------------------------------------------------------------
   }

@@ -36,25 +36,45 @@ const char* check_directory_access(string p) {
   return NULL;
 }
 
-void handle_font_size(FileExplorerConfig& config) {
+void handle_font_size(FileExplorerConfig& config, ImageConfig& imgConf) {
+  bool isChange = false;
   // increase fontSize
   if (IsKeyPressed(KEY_EQUAL)) {
     ++config.fontSize;
+    isChange = true;
   }
 
   // decrease fontSize
   if (IsKeyPressed(KEY_MINUS)) {
     --config.fontSize;
+    isChange = true;
+  }
+
+  // handle resize loaded image
+  if (isChange && !imgConf.imgPath.empty()) {
+    // remeasure scale
+    string tmpText = "0123456789012345678901";
+    Vector2 tmpTextSize = MeasureTextEx(config.font, tmpText.c_str(),
+                                        config.fontSize, config.spacing);
+
+    // update image draw region
+    imgConf.imageRegionStart = Vector2{.x = tmpTextSize.x, .y = tmpTextSize.y};
+    UnloadTexture(imgConf.texture);
+    handle_load_image(imgConf);
+    draw_loaded_image(imgConf, config);
   }
 }
 
 void handle_load_image(ImageConfig& conf) {
+  cout << "conf.imageRegionStart.x = " << conf.imageRegionStart.x << "\n";
   Image image = LoadImage(conf.imgPath.c_str());
-  int targetWidth = conf.screenWidth - conf.posImg.x - 5;
+  int targetWidth = conf.screenWidth - conf.imageRegionStart.x - 10;
   ImageResize(&image, targetWidth,
               image.height / float(image.width) * targetWidth);
 
   conf.texture = LoadTextureFromImage(image);  // pass to GPU
+  conf.posImg.x = (conf.screenWidth / 2 + conf.imageRegionStart.x / 2 -
+                   conf.texture.width / 2);
   conf.posImg.y = (conf.screenHeight / 2 - conf.texture.height / 2 - 40);
   UnloadImage(image);  // remove from RAM
 }
@@ -63,7 +83,7 @@ void handle_open_pdf(string p) {
   stringstream exec;
   exec << "evince "
        << "\"" << p << "\" &";
-  cout << "cmd = " << exec.str() << "\n";
+  // cout << "cmd = " << exec.str() << "\n";
   system(exec.str().c_str());
 }
 
@@ -94,11 +114,11 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
       }
       std::string fn = fi->path().string();
       if (check_directory_access(fn) == NULL && fi->is_directory()) {
-        // unload texture if currently loaded
-        if (!imgConfig.imgPath.empty()) {
-          imgConfig.imgPath = "";
-          UnloadTexture(imgConfig.texture);
-        }
+        // // unload texture if currently loaded
+        // if (!imgConfig.imgPath.empty()) {
+        //   imgConfig.imgPath = "";
+        //   UnloadTexture(imgConfig.texture);
+        // }
         // check if actually click within the filename
         std::string tmpPath = fi->path().filename().string();
         if (tmpPath.length() >= 20) {
@@ -124,6 +144,11 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
         std::string fn_ext = fn.substr(fn.find_last_of(".") + 1);
         if (fn_ext == "jpg" || fn_ext == "jpeg" || fn_ext == "png" ||
             fn_ext == "bmp") {
+          // unload first
+          if (!imgConfig.imgPath.empty()) {
+            imgConfig.imgPath = "";
+            UnloadTexture(imgConfig.texture);
+          }
           imgConfig.imgPath = fn;
           handle_load_image(imgConfig);
         }
@@ -135,14 +160,13 @@ void handle_click(const FileExplorerConfig& config, ImageConfig& imgConfig,
     }
 
     if (mouseFileIdx == 0) {
-      // unload texture if currently loaded
-      if (!imgConfig.imgPath.empty()) {
-        imgConfig.imgPath = "";
-        UnloadTexture(imgConfig.texture);
-      }
+      // // unload texture if currently loaded
+      // if (!imgConfig.imgPath.empty()) {
+      //   imgConfig.imgPath = "";
+      //   UnloadTexture(imgConfig.texture);
+      // }
 
-      path.current_path_s =
-          path.current_path.parent_path().string();
+      path.current_path_s = path.current_path.parent_path().string();
       path.parent_path_s =
           path.current_path.parent_path().parent_path().string();
       path.current_path = path.current_path_s;
@@ -168,10 +192,21 @@ void draw_loaded_image(const ImageConfig& conf,
   }
 }
 
-void draw_file_explorer(const FileExplorerConfig& config, Path& path,
-                        Vector2& posText, Vector2& posMouse,
+void draw_file_explorer(const FileExplorerConfig& config, ImageConfig& imgConf,
+                        Path& path, Vector2& posText, Vector2& posMouse,
                         const int& mouseFileIdx, const int& scrollOffset) {
+  // Draw vertical line
+  string tmpText = "0123456789012345678901";
+  Vector2 tmpTextSize = MeasureTextEx(config.font, tmpText.c_str(),
+                                      config.fontSize, config.spacing);
+  DrawLineV(Vector2{.x = tmpTextSize.x, .y = tmpTextSize.y},
+            Vector2{.x = tmpTextSize.x, .y = float(imgConf.screenHeight)},
+            GRAY);
   auto fi = get_directory(path);
+
+  // update image draw region
+  imgConf.imageRegionStart = Vector2{.x = tmpTextSize.x, .y = tmpTextSize.y};
+
   // Draw current path
   Vector2 posc = {.x = 10, .y = 0};
   DrawTextEx(config.font, path.current_path.string().c_str(), posc,
