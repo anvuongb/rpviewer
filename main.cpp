@@ -30,6 +30,7 @@ int main(void) {
       .folderColor = DARKBLUE,
       .fileColor = DARKPURPLE};
   // End File explorer explorerConfig
+  init_explorer(explorerConfig, path);
 
   ImageConfig imageConfig = {
       .targetWidth = 200,
